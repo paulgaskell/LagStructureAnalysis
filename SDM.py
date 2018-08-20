@@ -12,21 +12,8 @@ import seaborn as sns
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-class SDM:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-
-        try:
-            assert len(self.x) == len(self.y)
-        except AssertionError as E:
-            logger.error("time series must be of equal length")
-            sys.exit()
-	
-        logger.info("tseries loaded lengths {}".format(str(x.shape)))
-	
-    ####### PROBABILITY SURFACES 
-	
+class Pr_surfaces:
+    
     def create_pr_surface(self, lag, loss, Pr):
         """
         Args: x, y, loss, lag, Pr
@@ -52,9 +39,9 @@ class SDM:
 			
         self.D = self.Pr(self.D)
         return self
-		
-    ######## RECURSION FUNCTIONS 
-		
+
+class Recursions:
+
     def recursive_bayes_simple(self):		
 		
         self.W = np.zeros(self.D.shape)
@@ -67,9 +54,9 @@ class SDM:
             self.W[t] = w
 			
         return self
-	
-    ######### PLOTTING/RESULTS ANALYSIS 
-	
+
+class Results:
+
     def results(self):
         self.forecast = np.sum(self.W*self.V, 1)
         self.mae = np.mean(np.abs(self.forecast-self.y[self.lag:]))
@@ -86,6 +73,23 @@ class SDM:
 
         g = sns.heatmap(sdm.W.T)
         show()
+        
+
+
+class SDM(Pr_surfaces, Recursions, Results):
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+        try:
+            assert len(self.x) == len(self.y)
+        except AssertionError as E:
+            logger.error("time series must be of equal length")
+            sys.exit()
+	
+        logger.info("tseries loaded lengths {}".format(str(x.shape)))
+		
+	
 			
 if __name__ == "__main__":
     sdm = SDM(
