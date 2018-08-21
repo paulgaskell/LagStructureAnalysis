@@ -7,6 +7,7 @@ import numpy as np
 import sys
 import logging 
 from pylab import show
+import matplotlib.pyplot as plt
 import seaborn as sns
 
 logging.basicConfig(level=logging.INFO)
@@ -24,7 +25,7 @@ class Pr_surfaces:
         self.lag = lag
         self.loss = loss
         self.Pr = Pr
-        self.D = np.zeros((len(self.x)-lag, ((lag-1)*2)))
+        self.D = np.zeros((len(self.x)-lag, 4, lag-1))
         self.V = np.zeros(self.D.shape)
 		
         t = self.lag
@@ -32,8 +33,10 @@ class Pr_surfaces:
         loss = self.loss
         lag = self.lag
         while t < end:
-            self.V[t-lag][:lag-1] = self.x[t-lag:t-1]
-            self.V[t-lag][lag-1:] = self.y[t-lag:t-1][::-1]
+            self.V[t-lag][0] = self.x[t-lag:t-1]
+            self.V[t-lag][1] = -self.x[t-lag:t-1]
+            self.V[t-lag][2] = self.y[t-lag:t-1]
+            self.V[t-lag][3] = -self.y[t-lag:t-1]
             self.D[t-lag] = loss(self.y[t], self.V[t-lag])
             t += 1
 			
@@ -46,7 +49,7 @@ class Recursions:
 		
         self.W = np.zeros(self.D.shape)
 		
-        w = np.ones(len(self.D[0]))
+        w = np.ones(self.D[0].shape)
         w = w/np.sum(w)
         for t, i in enumerate(self.D):
             w = (w+0.00001)*i
@@ -58,7 +61,7 @@ class Recursions:
 class Results:
 
     def results(self):
-        self.forecast = np.sum(self.W*self.V, 1)
+        self.forecast = np.sum(np.sum(self.W*self.V, 1), 1)
         self.mae = np.mean(np.abs(self.forecast-self.y[self.lag:]))
        
     def heatmap(self, surface='W'):
@@ -71,7 +74,20 @@ class Results:
         else:
             logger.error("you need to specifiy a plottable surface, W, D, V")
 
-        g = sns.heatmap(sdm.W.T)
+        fig, axn = plt.subplots(4, 1, sharex=True, sharey=True)
+        cbar_ax = fig.add_axes([.91, .3, .03, .4])
+
+        for i, ax in enumerate(axn.flat):
+            sns.heatmap(
+                np.array([j[i] for j in s]).T, 
+                ax=ax,
+                cbar=i== 0,
+                vmin=0, 
+                vmax=1,
+                cbar_ax=None if i else cbar_ax
+                )
+
+        fig.tight_layout(rect=[0, 0, .9, 1])
         show()
         
 
@@ -92,15 +108,18 @@ class SDM(Pr_surfaces, Recursions, Results):
 	
 			
 if __name__ == "__main__":
-    sdm = SDM(
-            np.random.normal(0, 1, 100), 
-            np.random.normal(0, 1, 100)
-            )
-			
+
+    y = np.random.normal(0, 1, 100)
+    x = np.append(y[5:], np.random.normal(0, 1, 5))
+    
+    
+    sdm = SDM(x, y)
+	
+    
     sdm.create_pr_surface(
         10,
-        lambda x, y: x-y,
-        lambda x: np.exp(-(x**2)/10)
+        lambda x, y: (x-y)**2,
+        lambda x: np.exp(-(x**2))
         ).recursive_bayes_simple().results()
 
     print(sdm.mae)
