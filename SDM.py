@@ -1,6 +1,16 @@
 
 """
 Base class of the SDM algorithm
+
+TODO
+    labels on graph axes
+    examples 
+    optimisations for Pr
+    OTCP recursion structure 
+    max a posteriori error 
+    linear regression comparison
+    ackage structure - pip installable 
+    
 """
 
 import numpy as np
@@ -9,13 +19,37 @@ import logging
 from pylab import show
 import matplotlib.pyplot as plt
 import seaborn as sns
+from functools import partial 
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+logger.info("package install is complete")
+
+class Examples:
+    """
+    Making a variety of example t-series for testing/illustration 
+    purposes
+    """
+    
+    def __init__(self):
+        self.x = None
+        self.y = None
+    
+    def make_y(self):
+        self.y = np.random.normal(0, 1, 100)
+        return self
+    
+    def make_x(self, lag):
+        self.x = np.append(self.y[lag:], np.random.normal(0, 1, lag))
+        return self
+        
+    def out(self):
+        return self.x, self.y
+
 class Pr_surfaces:
     
-    def create_pr_surface(self, lag, loss, Pr):
+    def create_pr_surface(self, lag, h):
         """
         Args: x, y, loss, lag, Pr
         Returns: 
@@ -23,24 +57,20 @@ class Pr_surfaces:
             each lag of x and y
         """
         self.lag = lag
-        self.loss = loss
-        self.Pr = Pr
-        self.D = np.zeros((len(self.x)-lag, 4, lag-1))
+        self.h = h
+        self.D = np.zeros((len(self.x)-lag, 2, lag-1))
         self.V = np.zeros(self.D.shape)
 		
+        loss = lambda x, y: (x-y)**2 
         t = self.lag
         end = len(self.x)
-        loss = self.loss
-        lag = self.lag
         while t < end:
             self.V[t-lag][0] = self.x[t-lag:t-1]
             self.V[t-lag][1] = -self.x[t-lag:t-1]
-            self.V[t-lag][2] = self.y[t-lag:t-1]
-            self.V[t-lag][3] = -self.y[t-lag:t-1]
             self.D[t-lag] = loss(self.y[t], self.V[t-lag])
             t += 1
 			
-        self.D = self.Pr(self.D)
+        self.D = np.exp(-self.D/self.h)
         return self
 
 class Recursions:
@@ -63,6 +93,7 @@ class Results:
     def results(self):
         self.forecast = np.sum(np.sum(self.W*self.V, 1), 1)
         self.mae = np.mean(np.abs(self.forecast-self.y[self.lag:]))
+        return self
        
     def heatmap(self, surface='W'):
         if surface == 'W':
@@ -87,10 +118,9 @@ class Results:
                 cbar_ax=None if i else cbar_ax
                 )
 
-        fig.tight_layout(rect=[0, 0, .9, 1])
+        #fig.tight_layout(rect=[0, 0, .9, 1])
         show()
         
-
 
 class SDM(Pr_surfaces, Recursions, Results):
     def __init__(self, x, y):
@@ -105,23 +135,40 @@ class SDM(Pr_surfaces, Recursions, Results):
 	
         logger.info("tseries loaded lengths {}".format(str(x.shape)))
 		
-	
+class Optimiser:
+    def __init__(self, sdm):
+        self.sdm = sdm
+
+    def evo_optimiser(self):
+        h = np.random.random()
+        err = 1000
+        while True:
+            nerr = self.sdm.create_pr_surface(10, nh).recursive_bayes_simple(
+                    ).results().mae
+            
+            if nerr < err:
+                h = nh
+            nh += np.random.normal(0, 0.1)
+            if nh < 0:
+                nh = -nh
+            print err, h
+            
 			
 if __name__ == "__main__":
 
-    y = np.random.normal(0, 1, 100)
-    x = np.append(y[5:], np.random.normal(0, 1, 5))
-    
-    
+    x, y = Examples().make_y().make_x(5).out()    
     sdm = SDM(x, y)
-	
     
-    sdm.create_pr_surface(
-        10,
-        lambda x, y: (x-y)**2,
-        lambda x: np.exp(-(x**2))
-        ).recursive_bayes_simple().results()
+    # np.exp(-((x-y)**2)/h)
+    # np.exp(-(((a+bx)-y)**2)/h)
+    
+    op = Optimiser(sdm)
+    op.evo_optimiser()
+    #sdm.create_pr_surface(
+    #    10,
+    #    0.001,
+    #    ).recursive_bayes_simple().results()
 
     print(sdm.mae)
-    sdm.heatmap()
+    #sdm.heatmap()
 	
