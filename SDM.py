@@ -41,7 +41,10 @@ class Examples:
         return self
     
     def make_x(self, lag):
-        self.x = np.append(self.y[lag:], np.random.normal(0, 1, lag))
+        self.x = np.append(
+                    self.y[lag:]+np.random.normal(0, 2, 100-lag), 
+                    np.random.normal(0, 1, lag)
+                    )
         return self
         
     def out(self):
@@ -92,6 +95,7 @@ class Results:
 
     def results(self):
         self.forecast = np.sum(np.sum(self.W*self.V, 1), 1)
+        print self.forecast
         self.mae = np.mean(np.abs(self.forecast-self.y[self.lag:]))
         return self
        
@@ -105,7 +109,7 @@ class Results:
         else:
             logger.error("you need to specifiy a plottable surface, W, D, V")
 
-        fig, axn = plt.subplots(4, 1, sharex=True, sharey=True)
+        fig, axn = plt.subplots(2, 1, sharex=True, sharey=True)
         cbar_ax = fig.add_axes([.91, .3, .03, .4])
 
         for i, ax in enumerate(axn.flat):
@@ -141,18 +145,23 @@ class Optimiser:
 
     def evo_optimiser(self):
         h = np.random.random()
-        err = 1000
-        while True:
-            nerr = self.sdm.create_pr_surface(10, nh).recursive_bayes_simple(
-                    ).results().mae
+        err = 1
+        t = 0
+        while t < 100:
+            a = np.random.normal(0, err)
+            self.sdm = self.sdm.create_pr_surface(10, h+a).recursive_bayes_simple(
+                    ).results()
             
-            if nerr < err:
-                h = nh
-            nh += np.random.normal(0, 0.1)
-            if nh < 0:
-                nh = -nh
-            print err, h
+            err_ = self.sdm.mae
             
+            if err_ < err:
+                h = h+a
+                err = err_
+            
+            print err, h, a, t
+            t += 1
+            
+        return self
 			
 if __name__ == "__main__":
 
@@ -163,12 +172,7 @@ if __name__ == "__main__":
     # np.exp(-(((a+bx)-y)**2)/h)
     
     op = Optimiser(sdm)
-    op.evo_optimiser()
-    #sdm.create_pr_surface(
-    #    10,
-    #    0.001,
-    #    ).recursive_bayes_simple().results()
+    op = op.evo_optimiser()
 
-    print(sdm.mae)
-    #sdm.heatmap()
+    op.sdm.heatmap()
 	
