@@ -31,25 +31,23 @@ class SDM:
     example usage below
     """
     
-    def __init__(self, series):
-        """
-        TODO: check if all series are the same len
-        """
-        self.series = series 
-        for x, y in self.series:
-            logger.info("t-series dimensions = {}, {}".format(
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+    
+        logger.info("t-series dimensions = {}, {}".format(
                         str(x.shape), str(y.shape)
                         ))
     
     def create_d_surface(self, lags):
         """
         """
-        D = np.zeros((len(self.series[0][0])-lags, len(self.series), lags))
+        D = np.zeros((len(self.x)-lags, 2, lags))
         logger.info("D dim = {}".format(D.shape))
-        for t in range(lags, len(self.series[0][0]), 1):
-            for i, (a, b) in enumerate(self.series):
-                D[t-lags][i] = a[t-lags:t][::-1]-b[t]
-        
+        for t in range(lags, len(self.x), 1):
+            D[t-lags][0] = x[t-lags:t][::-1]-y[t]
+            D[t-lags][1] = y[t-lags:t][::-1]-x[t]
+
         self.lags = lags
         self.D = D 
         return self    
@@ -60,8 +58,8 @@ class SDM:
         mu = np.mean(self.D)
         sig = np.std(self.D)
         logger.info("mu={} sig={}".format(mu, sig))
-        
-        W = np.ones(self.D.shape)/(self.lags*len(self.series))
+		
+        W = np.ones(self.D.shape)/(self.lags*2)
         logger.info("W dim = {}".format(W.shape))
         for t in range(1, len(self.D), 1): 
             if top_paths:
@@ -76,8 +74,8 @@ class SDM:
             
             W[t] = (w+0.00001)*normal(self.D[t], mu, sig)
             W[t] = W[t]/np.sum(W[t])
-        
-        print abs(np.sum(W[1:]*self.D[:-1]))
+            print W[t].shape, np.sum(W[t])
+            
         self.W = W
         return self 
 
@@ -88,7 +86,7 @@ if __name__ == "__main__":
 
     # make an example time series
     x = np.random.normal(0, 1, 200)
-    y = np.random.normal(0, 1, 200)
+    y = np.random.normal(0, .1, 200)
     for n, i in enumerate(x):
         if n < 20:
             y[n] += x[n+1]
@@ -107,11 +105,12 @@ if __name__ == "__main__":
     y = np.append(y, y)
     
     # run the TOP method
-    sdm = SDM([(x, y)])
-    sdm = sdm.create_d_surface(40).sdm(top_paths=False)    
+    sdm = SDM(x, y)
+    sdm = sdm.create_d_surface(40).sdm(top_paths=True)    
     fig = figure()
-    for s in range(1, len(sdm.series)+1, 1):
-        ax = fig.add_subplot(len(sdm.series),1,s)    
-        ax.imshow([i[s-1] for i in sdm.W.T], aspect='auto')
+    ax = fig.add_subplot(211)
+    ax1 = fig.add_subplot(212)
+    ax.imshow([i[0] for i in sdm.W.T], aspect='auto')
+    ax1.imshow([i[1] for i in sdm.W.T], aspect='auto')
     show()
 	
