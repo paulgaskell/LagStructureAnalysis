@@ -1,6 +1,6 @@
 # Lag Structure Analysis Methods 
 
-## Collection of interesting algos for lag structure analysis includes; 
+Collection of interesting algos for lag structure analysis includes; 
 
 ### SDM
 
