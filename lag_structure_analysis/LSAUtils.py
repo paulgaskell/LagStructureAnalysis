@@ -7,3 +7,6 @@ def normal(x, mu, sig):
     Z = 1./np.sqrt(2*pi*sig_2)
     d = (x-mu)**2
     return Z*np.exp(-d/(2*sig_2))
+    
+def zscore(x):
+    return (x-np.mean(x))/np.std(x)

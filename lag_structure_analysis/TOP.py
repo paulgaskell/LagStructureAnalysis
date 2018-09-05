@@ -36,25 +36,22 @@ class TOP(LSABase):
                         str(x.shape), str(y.shape)
                         ))
         
-        D = np.zeros((len(self.x), len(self.y)))
-        for n, i in enumerate(self.x):
-            for m, j in enumerate(self.y):
-                D[n][m] = (i-j)**2
+        D = []
+        lags = []
+        for t in range(0, len(x), 1):
+            D.append(np.zeros(t*2+1))
+            lags.append(np.zeros(t*2+1))
+            for tx in range(0, t+1, 1):
+                D[t][tx] = (x[tx]-y[t])**2
+                lags[t][tx] = t-tx
+            for ty in range(1, t+1, 1):
+                D[t][-ty] = (x[t]-y[ty-1])**2
+                lags[t][-ty] = -(t-ty+1)
+
+        self.lags = lags
         self.D = D
-        
-        logger.info("D dimensions = {}".format(str(D.shape)))
         return self
         
-    def _recursion(self, g):
-        """
-        Recursion pattern for applying the OTCP pathways
-        """
-        
-        for g_ in range(0, g+1, 1):
-            yield g, g_
-            if g != g_: 
-                yield g_, g
-                            
     def top(self, h):
         """
         Main TOP method - recurse over the matrix starting at point [0,0],
@@ -72,22 +69,21 @@ class TOP(LSABase):
         """
     
         predicted_lags = []
-        W = np.ones(self.D.shape)
-        for t in range(1, len(self.x), 1):
-            Z = 0.
-            lag = [0, None]
-            for n, m in self._recursion(t):
-                crds = [i for i in [(n-1, m), (n-1, m-1), (n, m-1)] if min(i) >= 0]
-                G = np.mean([W[i] for i in crds])
-                W[n][m] = (G+0.00001)*np.exp(-self.D[n][m]/h)
-                Z += W[n][m]
+        W = [np.zeros(len(i)) for i in self.D]
+        W[0] += 1
+        for t in range(1, len(self.D), 1):
+            W[t][1:-1] = W[t-1]
+            #W[t][:-2] += W[t-1]
+            #W[t][2:] += W[t-1]
+            W[t] += 0.00001
             
-            mean_lag = 0.            
-            for n, m in self._recursion(t):
-                W[n][m] = W[n][m]/Z
-                mean_lag += W[n][m]*(n-m)
-                    
-            predicted_lags.append(mean_lag)
+            W[t] = W[t]+np.exp(-self.D[t]/h)
+            W[t] = W[t]/np.sum(W[t])
+            
+            print np.sum(W[t])
+            print self.lags[t][np.argmax(W[t])], self.lags[t][np.argmin(self.D[t])],   
+            print np.sum(self.lags[t]*W[t])
+            predicted_lags.append(np.sum(W[t]*self.lags[t]))
         
         self.predicted_lags = predicted_lags
         self.W = W 
@@ -102,6 +98,9 @@ if __name__ == "__main__":
     top = TOP()
     x, y = top.simple_example()
     top = top.create_d_surface(x, y).top(.5)
-    top.simple_heatmap().display()
-
+    fig = figure()
+    ax = fig.add_subplot(111)
+    ax.plot(top.predicted_lags)
+    show()
+    
     

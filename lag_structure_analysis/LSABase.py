@@ -5,24 +5,27 @@ Base class for LSA
 
 import numpy as np
 from pylab import show, figure
+from scipy.stats import linregress
 
 class Examples:
     def simple_example(self):
         x = np.random.normal(0, 1, 200)
-        y = np.random.normal(0, 1, 200)
+        y = np.random.normal(0, 0.001, 200)
+        a = 0
+        b = 1
+                
         for n, i in enumerate(x):
             if n < 20:
-                y[n] += x[n+1]
+                y[n] += a+b*x[n+1]
             elif n < 70:
-                y[n] += x[n-10]
+                y[n] += a+b*x[n-10]
             elif n < 120:
-                y[n] += x[n-30]
+                y[n] += a+b*x[n-30]
             elif n < 150:
-                y[n] += x[n-35]
+                y[n] += a+b*x[n-35]
             else:
-                y[n] += x[n]
+                y[n] += a+b*x[n]
     
-        y = (y-np.mean(y))/np.std(y)
         return x, y
 
 class Charts:
