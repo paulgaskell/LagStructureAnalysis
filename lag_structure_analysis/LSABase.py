@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 class Examples:
     def simple_example(self):
-        x = np.random.normal(0, 1, 200)
+        x = np.random.normal(0, 1, 200)        
         error = np.random.normal(0, 1, 200)
         y = np.zeros(x.shape)
         a = 7
@@ -33,6 +33,33 @@ class Examples:
         y = y+error
         return x, y
 
+    def autocorr_example(self):
+        
+        x = [np.random.normal(0, 1)]
+        for i in range(0, 199, 1):
+            x.append((x[-1]*0.8)+np.random.normal(0, 1))
+        x = np.array(x)
+        
+        error = np.random.normal(0, 1, 200)
+        y = np.zeros(x.shape)
+        a = 7
+        b = 6
+        logger.info(repr(linregress(x, a+x*b+error)))
+        for n, i in enumerate(x):
+            if n < 20:
+                y[n] = a+x[n+1]*b
+            elif n < 70:
+                y[n] = a+x[n-10]*b
+            elif n < 120:
+                y[n] = a+x[n-30]*b
+            else:
+                y[n] = a+x[n-35]*b
+
+        y = y+error
+        return x, y
+
+        
+        
 class Charts:
     def plt_simple_heatmap(self):       
         fig = figure()
