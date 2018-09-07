@@ -5,6 +5,10 @@ the distance between x and y based on asumptions about the markov process
 that drives lag structure change between t and t+1. 
 
 See Gaskell, McGroarty, and Tiropanis 2015
+
+TODO:
+    regression results on graphs
+
 """
 
 import logging
