@@ -17,3 +17,9 @@ https://www.tandfonline.com/doi/abs/10.1080/14697680500383763
 
 Aligns 2 time-series by finding the lowest average energy path over a 
 random energy landscape formed by the distances between the two series.
+
+#### TODO
+
+- Replicate some examples on real world data 
+- SDM with optimal h
+- SDM optimising linear function inside estimator 
