@@ -94,6 +94,7 @@ class SDM(LSABase):
                 w[0] = w[0]/2
                 w[-1] = w[-1]/2
             
+
             W[t] = (w+0.00001)*PrD[t]
             W[t] = W[t]/np.sum(W[t])
             top_structure[t] = np.sum(W[t], 1)

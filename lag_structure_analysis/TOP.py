@@ -17,6 +17,10 @@ logger = logging.getLogger(__name__)
 class TOP(LSABase):
     """
     class holding the TOP method
+	
+	TODO:
+		some issue with the surface keeps pulling lag structure to the 
+		bottom
     """
 
     def create_d_surface(self, x, y):
@@ -34,8 +38,8 @@ class TOP(LSABase):
 			self.lags: pyramid of corresponding lags 
         """
 
-        self.x = zscore(x)
-        self.y = zscore(y)
+        #self.x = zscore(x)
+        #self.y = zscore(y)
     
         logger.info("t-series dimensions = {}, {}".format(
                         str(x.shape), str(y.shape)

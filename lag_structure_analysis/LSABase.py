@@ -15,10 +15,10 @@ logger = logging.getLogger(__name__)
 class Examples:
     def simple_example(self):
         x = np.random.normal(0, 1, 200)        
-        error = np.random.normal(0, 1, 200)
+        error = np.random.normal(0, 0.001, 200)
         y = np.zeros(x.shape)
-        a = 7
-        b = 6
+        a = 0
+        b = 1
         logger.info(repr(linregress(x, a+x*b+error)))
         for n, i in enumerate(x):
             if n < 20:
